@@ -3,39 +3,7 @@
 <head>
 <title> News</title>
 <script>
-var options = [
-        set0 = ['Option 1','Option 2'],
-        set1 = ['First Option','Second Option','Third Option']
-    ];
 
-function makeh1() {
-    //header
-    var header = document.createElement('h1');
-    header.appendChild("Today's News");
-    return header;
-}
-
-function makeUL(array) {
-    // Create the list element:
-    var list = document.createElement('ul');
-
-    for (var i = 0; i < array.length; i++) {
-        // Create the list item:
-        var item = document.createElement('li');
-
-        // Set its contents:
-        item.appendChild(document.createTextNode(array[i]));
-
-        // Add it to the list:
-        list.appendChild(item);
-    }
-
-    // Finally, return the constructed list:
-    return list;
-}
-//makeheader
-document.getElementById('foo').appendChild(makeh1));
-document.getElementById('foo').appendChild(makeUL(options[0]));
 </script>
 </head>
 <body>
