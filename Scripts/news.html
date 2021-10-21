@@ -1,88 +1,103 @@
-<!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-<style>
-body {
-  margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
-}
+  <meta charset="utf-8">
+  <title>tracking.js - feature matching</title>
+  <link rel="stylesheet" href="assets/demo.css">
 
-.topnav {
-  overflow: hidden;
-  background-color: #333;
-}
+  <script src="../build/tracking-min.js"></script>
+  <script src="../node_modules/dat.gui/build/dat.gui.min.js"></script>
 
-.topnav a {
-  float: left;
-  display: block;
-  color: #f2f2f2;
-  text-align: center;
-  padding: 14px 16px;
-  text-decoration: none;
-  font-size: 17px;
-}
-
-.topnav a:hover {
-  background-color: #ddd;
-  color:# 6a329f ;
-}
-
-.topnav a.active {
-  background-color: #6a329f;
-  color: white;
-}
-
-.topnav .icon {
-  display: none;
-}
-
-@media screen and (max-width: 600px) {
-  .topnav a:not(:first-child) {display: none;}
-  .topnav a.icon {
-    float: right;
-    display: block;
+  <style>
+  .demo-container {
+    background-color: black;
   }
-}
-
-@media screen and (max-width: 600px) {
-  .topnav.responsive {position: relative;}
-  .topnav.responsive .icon {
+  #image1, #image2 {
     position: absolute;
-    right: 0;
-    top: 0;
+    left: -1000px;
+    top: -1000px;
   }
-  .topnav.responsive a {
-    float: none;
-    display: block;
-    text-align: left;
+  #canvas {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin-left: -393px;
+    margin-top: -147px;
   }
-}
-</style>
+  </style>
 </head>
 <body>
+  <div class="demo-title">
+    <p><a href="http://trackingjs.com" target="_parent">tracking.js</a> － match similar feature points in two images</p>
+  </div>
 
-<div class="topnav" id="myTopnav">
-  <a href="#home" class="active">Home</a>
-  <a href="C:\Users\malsh\Documents\GitHub\web-try-prom1\Scripts\news.html">News</a>
-  <a href="#cotact">Contact</a>
-  <a href="C:\Users\malsh\Documents\GitHub\web-try-prom1\Scripts\about.html">About</a>
-  <a href="javascript:void(0);" class="icon" onclick="myFunction()">
-    <i class="fa fa-bars"></i>
-  </a>
-</div>
+  <div class="demo-frame">
+    <div class="demo-container">
+      <img id="image1" src="assets/brief1.png" />
+      <img id="image2" src="assets/brief2.png" />
+      <canvas id="canvas" width="786" height="295"></canvas>
+    </div>
+  </div>
 
+  <script>
+  window.onload = function() {
+    var width = 393;
+    var height = 295;
+    var canvas = document.getElementById('canvas');
+    var context = canvas.getContext('2d');
 
-<script>
-function myFunction() {
-  var x = document.getElementById("myTopnav");
-  if (x.className === "topnav") {
-    x.className += " responsive";
-  } else {
-    x.className = "topnav";
+    var image1 = document.getElementById('image1');
+    var image2 = document.getElementById('image2');
+
+    window.descriptorLength = 256;
+    window.matchesShown = 30;
+    window.blurRadius = 3;
+
+    var doMatch = function() {
+      tracking.Brief.N = window.descriptorLength;
+
+      context.drawImage(image1, 0, 0, width, height);
+      context.drawImage(image2, width, 0, width, height);
+
+      var imageData1 = context.getImageData(0, 0, width, height);
+      var imageData2 = context.getImageData(width, 0, width, height);
+
+      var gray1 = tracking.Image.grayscale(tracking.Image.blur(imageData1.data, width, height, blurRadius), width, height);
+      var gray2 = tracking.Image.grayscale(tracking.Image.blur(imageData2.data, width, height, blurRadius), width, height);
+
+      var corners1 = tracking.Fast.findCorners(gray1, width, height);
+      var corners2 = tracking.Fast.findCorners(gray2, width, height);
+
+      var descriptors1 = tracking.Brief.getDescriptors(gray1, width, corners1);
+      var descriptors2 = tracking.Brief.getDescriptors(gray2, width, corners2);
+
+      var matches = tracking.Brief.reciprocalMatch(corners1, descriptors1, corners2, descriptors2);
+
+      matches.sort(function(a, b) {
+        return b.confidence - a.confidence;
+      });
+
+      for (var i = 0; i < Math.min(window.matchesShown, matches.length); i++) {
+        var color = '#' + Math.floor(Math.random()*16777215).toString(16);
+        context.fillStyle = color;
+        context.strokeStyle = color;
+        context.fillRect(matches[i].keypoint1[0], matches[i].keypoint1[1], 4, 4);
+        context.fillRect(matches[i].keypoint2[0] + width, matches[i].keypoint2[1], 4, 4);
+
+        context.beginPath();
+        context.moveTo(matches[i].keypoint1[0], matches[i].keypoint1[1]);
+        context.lineTo(matches[i].keypoint2[0] + width, matches[i].keypoint2[1]);
+        context.stroke();
+
+      }
+    };
+
+    doMatch();
+
+    var gui = new dat.GUI();
+    gui.add(window, 'descriptorLength', 128, 512).step(32).onChange(doMatch);
+    gui.add(window, 'matchesShown', 1, 100).onChange(doMatch);
+    gui.add(window, 'blurRadius', 1.1, 5).onChange(doMatch);
   }
-}
-</script>
-
+  </script>
 </body>
+</html>
